@@ -153,11 +153,11 @@ export class DefaultSceneWithTexture implements CreateSceneClass {
                             var pt =
                             points.push(pickInfo.pickedPoint)
                             var sphere = CreateSphere("pointSphere", { diameter: 0.1 }, scene);
-                            // sphere.position = pickInfo.pickedPoint;
+                            sphere.position = pickInfo.pickedPoint;
                             // var dragBehavior2 = new PointerDragBehavior({
                             //     dragPlaneNormal: new Vector3(0,1,0) 
                             // });
-                            sphere.addBehavior(dragBehavior2);
+                            // sphere.addBehavior(dragBehavior2);
                             prev_point = pickInfo.pickedPoint
                             break;
                         case 1:
