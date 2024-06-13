@@ -21,7 +21,6 @@ import { ExtrudeShape } from "@babylonjs/core/Meshes/Builders/shapeBuilder";
 import { Color3 } from "@babylonjs/core/Maths/math.color";
 import { PointerDragBehavior } from "@babylonjs/core/Behaviors/Meshes/pointerDragBehavior";
 import { extrude_polygon } from "./extrusion_utils";
-import { Polygon } from "./Polygon";
 
 
 var points = []
@@ -53,7 +52,7 @@ export class DefaultSceneWithTexture implements CreateSceneClass {
 
         // This attaches the camera to the canvas
         camera.attachControl(canvas, true);
-        var prev_point = null
+
         
         const ground = create_ground(scene)
         const light = create_light(scene)
@@ -64,25 +63,57 @@ export class DefaultSceneWithTexture implements CreateSceneClass {
             enable_draw = true
             points = []
             start_pt = null
-            prev_point = null
             spheres = []
         }
         var draw_button = create_button("draw", "Enable Draw", Control.HORIZONTAL_ALIGNMENT_RIGHT, draw_button_handler)
         advancedTexture.addControl(draw_button)
 
         var extrude_button = create_button("extrude", "Extrude", Control.HORIZONTAL_ALIGNMENT_LEFT, () => {
-            poly = new Polygon(scene, points)
-            poly.adjust_vertices()
-            poly.extrude(2)
-            spheres.forEach((sphere) => {
-                sphere.dispose()
-            })
-            lines.dispose()
+        
+        spheres.forEach((sphere) => {
+            sphere.dispose()
+        })
+        spheres = []
+        points.forEach((vertex, index) => {
+            var handle = CreateSphere("handle "+index, { diameter: 0.1 }, scene);
+            handle.position = vertex.clone();
+            spheres.push(handle);
+        
+            // Add drag behavior to the handle
+            var dragBehaviorPt = new PointerDragBehavior({
+                dragPlaneNormal: new Vector3(0, 1, 0) // Drag on the XZ plane
+            });
+            handle.addBehavior(dragBehaviorPt);
+        
+            // Update the shape and re-extrude the mesh when the handle is dragged
+            dragBehaviorPt.onDragObservable.add((event) => {
+                console.log("here")
+                points[index].x = handle.position.x;
+                points[index].z = handle.position.z;
+        
+                // Remove the old extruded mesh
+                poly.dispose();
+                
+                // Create a new extruded mesh with the updated shape
+                poly = extrude_polygon(points, 2, scene)
+                
+            });
+        });
+            poly = extrude_polygon(points, 2, scene)
+            lines.dispose();
+
+            
+            
+            // poly.position = new Vector3(1,1,1)
+            // var poly = ExtrudeShape("polygon", {shape: points, path: myPath, closeShape: true, cap:Mesh.CAP_ALL}, scene)
+            
         })
         advancedTexture.addControl(extrude_button)
 
-        // if (enable_draw) {
         
+
+        // if (enable_draw) {
+        var prev_point = null
         scene.onPointerDown = function (event, pickInfo){
         // .add((eventData) => {
             console.log(enable_draw)
@@ -97,6 +128,7 @@ export class DefaultSceneWithTexture implements CreateSceneClass {
                             if (start_pt == null) {
                                 start_pt = pickInfo.pickedPoint
                             }
+                            console.log("PUSH")
                             points.push(pickInfo.pickedPoint)
                             if (lines != null) {
                                 lines.dispose()
@@ -104,18 +136,22 @@ export class DefaultSceneWithTexture implements CreateSceneClass {
                             lines = CreateLines("lines", { points: points }, scene)
                             var sph1 = CreateSphere("pointSphere", { diameter: 0.1 }, scene);
                             sph1.position = pickInfo.pickedPoint;
+                            // var dragBehavior2 = new PointerDragBehavior({
+                            //     dragPlaneNormal: new Vector3(0,1,0) 
+                            // });
+                            // sph1.addBehavior(dragBehavior2);
                             spheres.push(sph1)
                             prev_point = pickInfo.pickedPoint
                             break;
                         case 2:
                             console.log("RIGHT");
-                            // if (start_pt != null) {
-                            //     points.push(start_pt)
-                            // }
+                            if (start_pt != null) {
+                                points.push(start_pt)
+                            }
                             if (lines != null) {
                                 lines.dispose()
                             }
-                            lines = CreateLines("lines", { points: points.concat([start_pt]) }, scene)
+                            lines = CreateLines("lines", { points: points }, scene)
                             enable_draw = false
                             draw_button.isEnabled = true
                             break;
