@@ -13,7 +13,7 @@ import "@babylonjs/core/Lights/Shadows/shadowGeneratorSceneComponent";
 import "@babylonjs/core/Culling/ray";
 import { AbstractEngine } from "@babylonjs/core/Engines/abstractEngine";
 import { AdvancedDynamicTexture, Control } from "@babylonjs/gui";
-import { create_ground, create_light, create_button } from "./common_utils";
+import { create_ground, create_light, create_button, create_gui } from "./common_utils";
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { CreateLines } from "@babylonjs/core/Meshes/Builders/linesBuilder";
 import { ExtrudePolygon } from "@babylonjs/core/Meshes/Builders/polygonBuilder";
@@ -26,7 +26,10 @@ import { Polygon } from "./Polygon";
 
 var points = []
 var start_pt = null
-var enable_draw = false
+export var enable_draw = false
+export var enable_move = false
+export var enable_edit = false
+
 var poly = null
 var lines = null
 var spheres = []
@@ -47,19 +50,19 @@ export class DefaultSceneWithTexture implements CreateSceneClass {
             new Vector3(0, 0, 0),
             scene
         );
-        
+
         // This targets the camera to scene origin
         camera.setTarget(Vector3.Zero());
 
         // This attaches the camera to the canvas
         camera.attachControl(canvas, true);
         var prev_point = null
-        
+
         const ground = create_ground(scene)
         const light = create_light(scene)
 
         var advancedTexture = AdvancedDynamicTexture.CreateFullscreenUI("UI");
-        
+
         var draw_button_handler = () => {
             enable_draw = true
             points = []
@@ -67,10 +70,9 @@ export class DefaultSceneWithTexture implements CreateSceneClass {
             prev_point = null
             spheres = []
         }
-        var draw_button = create_button("draw", "Enable Draw", Control.HORIZONTAL_ALIGNMENT_RIGHT, draw_button_handler)
-        advancedTexture.addControl(draw_button)
 
-        var extrude_button = create_button("extrude", "Extrude", Control.HORIZONTAL_ALIGNMENT_LEFT, () => {
+
+        var extrude_button_handler = () => {
             poly = new Polygon(scene, points)
             poly.adjust_vertices()
             poly.extrude(2)
@@ -78,20 +80,48 @@ export class DefaultSceneWithTexture implements CreateSceneClass {
                 sphere.dispose()
             })
             lines.dispose()
-        })
-        advancedTexture.addControl(extrude_button)
+        }
+
+        var move_button_handler = () => {
+            console.log("move handler", poly)
+            if (poly != null) {
+                if (enable_move == true) {
+                    enable_move = false
+                    poly.disable_move()
+                }
+                else {
+                    enable_move = true
+                    poly.enable_move()
+                }
+            }
+        }
+        var edit_button_handler = () => {
+            if (poly != null) {
+                if (enable_edit == true) {
+                    enable_edit = false
+                    poly.disable_edit()
+                }
+                else {
+                    enable_edit = true
+                    poly.enable_edit()
+                }
+            }
+        }
+
+        advancedTexture = create_gui(advancedTexture, draw_button_handler, move_button_handler, edit_button_handler, extrude_button_handler)
 
         // if (enable_draw) {
-        
-        scene.onPointerDown = function (event, pickInfo){
-        // .add((eventData) => {
+
+
+        scene.onPointerDown = function (event, pickInfo) {
+            // .add((eventData) => {
             console.log(enable_draw)
-            
+
             if (enable_draw) {
                 // If there's a hit on some mesh
-                console.log("clicked ", prev_point,pickInfo.pickedPoint )
+                console.log("clicked ", prev_point, pickInfo.pickedPoint)
                 if (pickInfo.pickedPoint && prev_point != pickInfo.pickedPoint) {
-                    draw_button.isEnabled = false
+                    // draw_button.isEnabled = false
                     switch (event.button) {
                         case 0:
                             if (start_pt == null) {
@@ -117,7 +147,7 @@ export class DefaultSceneWithTexture implements CreateSceneClass {
                             }
                             lines = CreateLines("lines", { points: points.concat([start_pt]) }, scene)
                             enable_draw = false
-                            draw_button.isEnabled = true
+                            advancedTexture.getControlByName("extrude").isEnabled = true
                             break;
                     }
                 }

@@ -15,12 +15,16 @@ export class Polygon {
     points: Vector3[]
     extruded_polygon: Mesh
     scene: Scene
+    vertex_dragBehaviors: PointerDragBehavior[]
+    poly_drag_behavior: PointerDragBehavior
 
     constructor(scene, points) {
         this.scene = scene
         this.extruded_polygon = null
         this.vertices = []
         this.points = points
+        this.vertex_dragBehaviors = []
+        this.poly_drag_behavior = null
     }
 
     extrude(height) {
@@ -79,6 +83,48 @@ export class Polygon {
 
         })
         this.extruded_polygon.addBehavior(dragBehavior);
+        this.poly_drag_behavior = dragBehavior
+        this.poly_drag_behavior.detach()
+    }
+
+    enable_move() {
+        this.poly_drag_behavior.attach(this.extruded_polygon)
+    }
+
+    disable_move() {
+        this.poly_drag_behavior.detach()
+    }
+    
+    disable_edit() {
+        this.vertices.forEach((sphere) => {
+        this.vertex_dragBehaviors.forEach((behavior) => {
+            behavior.detach()
+        })
+    })
+    }
+
+    enable_edit() {
+        this.vertex_dragBehaviors = []
+        this.vertices.forEach((vertex, index) => {
+            var dragBehaviorPt = new PointerDragBehavior({
+                dragPlaneNormal: new Vector3(0, 1, 0) 
+            });
+
+            dragBehaviorPt.onDragObservable.add((event) => {
+                // if ( enable_edit ) {
+                console.log("here")
+                this.points[index].x = vertex.position.x;
+                this.points[index].y = vertex.position.y;
+                this.points[index].z = vertex.position.z;
+                console.log(this.extruded_polygon)
+                this.extruded_polygon.dispose();
+                this.extrude(2)
+            // }
+            });
+
+            vertex.addBehavior(dragBehaviorPt);
+            this.vertex_dragBehaviors.push(dragBehaviorPt)
+        })
     }
 
     adjust_vertices() {
@@ -90,24 +136,6 @@ export class Polygon {
             var handle = CreateSphere("handle "+index, { diameter: 0.1 }, this.scene);
             handle.position = vertex.clone();
             this.vertices.push(handle);
-        
-            var dragBehaviorPt = new PointerDragBehavior({
-                dragPlaneNormal: new Vector3(0, 1, 0) 
-            });
-
-            dragBehaviorPt.onDragObservable.add((event) => {
-                console.log("here")
-                this.points[index].x = handle.position.x;
-                this.points[index].y = handle.position.y;
-                this.points[index].z = handle.position.z;
-                console.log(this.extruded_polygon)
-                this.extruded_polygon.dispose();
-                this.extrude(2)
-            });
-
-            handle.addBehavior(dragBehaviorPt);
-        
-            
         });
 
     }
