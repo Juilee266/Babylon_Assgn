@@ -1,13 +1,13 @@
 import { DirectionalLight } from "@babylonjs/core/Lights/directionalLight";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
-import { Vector3 } from "@babylonjs/core/Maths/math";
+import { Color3, Vector3 } from "@babylonjs/core/Maths/math";
 import { CreateGround } from "@babylonjs/core/Meshes/Builders/groundBuilder";
 import { Button, Control, TextBlock } from "@babylonjs/gui";
 import { GROUND_HEIGHT, GROUND_WIDTH } from "./constants";
 import { enable_edit, enable_move } from "./defaultWithTexture";
 
 export function create_button(name, text, alignment, handler) {
-    console.log("Creating button "+name)
+    console.log("Creating button " + name)
     var button = Button.CreateSimpleButton(name, text);
     button.color = "white";
     button.background = "green";
@@ -27,6 +27,7 @@ export function create_ground(scene) {
         scene
     );
     const groundMaterial = new StandardMaterial("ground material", scene);
+    groundMaterial.diffuseColor = new Color3(0.9, 0.9, 0.9);
     ground.material = groundMaterial;
     ground.receiveShadows = true;
 
@@ -45,15 +46,15 @@ export function create_light(scene) {
 }
 
 export function create_gui(advancedTexture, draw_handler, move_handler, edit_handler, extrude_handler) {
-    
-    var current_text = new TextBlock()
-    current_text.text = "Current mode: None"
-    current_text.color = "white";
+
+    var current_text = new TextBlock("curr_text")
+    current_text.text = "Current mode: _"
+    current_text.color = "red"
     current_text.fontSize = 24;
     current_text.top = "-40%"
     advancedTexture.addControl(current_text)
 
-    var subtext = new TextBlock()
+    var subtext = new TextBlock("subtext")
     subtext.text = "Please click on \"Enable Draw\" to start drawing."
     subtext.color = "white"
     subtext.fontSize = 16
@@ -64,12 +65,14 @@ export function create_gui(advancedTexture, draw_handler, move_handler, edit_han
         current_text.text = "Current mode: Drawing"
         subtext.text = "Left click to select vertices and right click to complete the polygon."
         draw_handler()
+        extrude_button.isEnabled = true
+        move_button.isEnabled = false
+        edit_button.isEnabled = false
     })
     draw_button.top = "-10%"
-    draw_button.isEnabled = true
     advancedTexture.addControl(draw_button)
 
-    var move_button = create_button("move", "Enable Move", Control.HORIZONTAL_ALIGNMENT_LEFT, () => {
+    var move_button = create_button("move", "Enable Move", Control.HORIZONTAL_ALIGNMENT_RIGHT, () => {
         current_text.text = "Current mode: Moving"
         subtext.text = "Drag to move the extruded shape."
         move_handler()
@@ -79,10 +82,10 @@ export function create_gui(advancedTexture, draw_handler, move_handler, edit_han
         }
         else {
             move_button.background = "green"
-            move_button.textBlock.text = "Enable Move" 
+            move_button.textBlock.text = "Enable Move"
         }
     })
-    move_button.isEnabled = false
+    move_button.top = "-10%"
     advancedTexture.addControl(move_button)
 
     var edit_button = create_button("edit", "Enable Edit", Control.HORIZONTAL_ALIGNMENT_RIGHT, () => {
@@ -95,22 +98,22 @@ export function create_gui(advancedTexture, draw_handler, move_handler, edit_han
         }
         else {
             edit_button.background = "green"
-            edit_button.textBlock.text = "Enable Edit" 
+            edit_button.textBlock.text = "Enable Edit"
         }
     })
-    edit_button.isEnabled = false
-    edit_button.top = "-10%"
     advancedTexture.addControl(edit_button)
 
-    var extrude_button = create_button("extrude", "Extrude", Control.HORIZONTAL_ALIGNMENT_RIGHT, () => {
-        move_button.isEnabled = true
-        edit_button.isEnabled = true
-        draw_button.isEnabled = false
+    var extrude_button = create_button("extrude", "Extrude", Control.HORIZONTAL_ALIGNMENT_LEFT, () => {
         extrude_handler()
-        extrude_button.isEnabled = false
+        edit_button.isEnabled = true
+        move_button.isEnabled = true
     })
-    extrude_button.isEnabled = false
     advancedTexture.addControl(extrude_button)
+
+    draw_button.isEnabled = true
+    edit_button.isEnabled = false
+    move_button.isEnabled = false
+    extrude_button.isEnabled = false
 
     return advancedTexture
 

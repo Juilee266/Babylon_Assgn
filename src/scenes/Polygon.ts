@@ -1,5 +1,6 @@
 import { Vector3 } from "@babylonjs/core/Maths/math"
 import { Mesh } from "@babylonjs/core/Meshes/mesh"
+import { ActionManager, ExecuteCodeAction } from "@babylonjs/core/Actions";
 import { PointerDragBehavior } from "@babylonjs/core/Behaviors/Meshes/pointerDragBehavior";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
 import { Color3 } from "@babylonjs/core/Maths/math.color";
@@ -9,6 +10,9 @@ import { MAX_X, MAX_Z, MIN_X, MIN_Z } from "./constants"
 import { CreateSphere } from "@babylonjs/core/Meshes/Builders/sphereBuilder";
 import { CreateLines } from "@babylonjs/core/Meshes/Builders/linesBuilder";
 import { Scene } from "@babylonjs/core/scene";
+import { HighlightLayer } from "@babylonjs/core/Layers/highlightLayer";
+import { enable_edit, enable_move } from "./defaultWithTexture";
+
 
 export class Polygon {
     vertices: Mesh[]
@@ -37,8 +41,6 @@ export class Polygon {
         this.extruded_polygon.position = new Vector3(0, 2, 0)
         var boundingInfo = this.extruded_polygon.getBoundingInfo();
 
-        var halfWidth = boundingInfo.boundingBox.extendSize.x;
-        var halfDepth = boundingInfo.boundingBox.extendSize.z;
         var dragBehavior = new PointerDragBehavior({
             dragPlaneNormal: new Vector3(0, 1, 0)
         });
@@ -51,6 +53,21 @@ export class Polygon {
 
         dragBehavior.onDragObservable.add((event) => {
             var planePt = this.extruded_polygon.position
+            
+            var halfWidth = boundingInfo.boundingBox.extendSize.x;
+            var halfDepth = boundingInfo.boundingBox.extendSize.z;
+        
+            if (planePt.x + halfWidth > MAX_X) {
+                planePt.x = MAX_X - halfWidth;
+            } else if (planePt.x - halfWidth < MIN_X) {
+                planePt.x = MIN_X + halfWidth;
+            }
+            if (planePt.z + halfDepth > MAX_Z) {
+                planePt.z = MAX_Z - halfDepth;
+            } else if (planePt.z - halfDepth < MIN_Z) {
+                planePt.z = MIN_Z + halfDepth;
+            }
+
             var deltaX = planePt.x - initialMeshPosition.x;
             var deltaY = planePt.y - initialMeshPosition.y;
             var deltaZ = planePt.z - initialMeshPosition.z;
@@ -60,23 +77,6 @@ export class Polygon {
                 pt.y += deltaY
                 pt.z += deltaZ
             });
-            
-            if (planePt.x + halfWidth > MAX_X) {
-                planePt.x = MAX_X
-                console.log("beyond maxX")
-            }
-            else if (planePt.x - halfWidth < MIN_X) {
-                planePt.x = MIN_X
-                console.log("beyond minX")
-            }
-            if (planePt.z + halfDepth > MAX_Z) {
-                planePt.z = MAX_Z
-                console.log("beyond maxZ")
-            }
-            else if (planePt.z - halfDepth < MIN_Z) {
-                planePt.z = MIN_Z
-                console.log("beyond minZ")
-            }
             this.extruded_polygon.position = planePt
             initialMeshPosition.copyFrom(this.extruded_polygon.position);
             this.adjust_vertices()
@@ -85,6 +85,25 @@ export class Polygon {
         this.extruded_polygon.addBehavior(dragBehavior);
         this.poly_drag_behavior = dragBehavior
         this.poly_drag_behavior.detach()
+
+        var hl = new HighlightLayer("hl1", this.scene, {
+            isStroke: false,
+        });
+        // Add ActionManager for highlighting
+        this.extruded_polygon.actionManager = new ActionManager(this.scene);
+
+        // On mouse over
+        this.extruded_polygon.actionManager.registerAction(new ExecuteCodeAction(ActionManager.OnPointerOverTrigger, () => {
+            if(enable_move) {
+            this.scene.hoverCursor = "pointer";
+            hl.addMesh(this.extruded_polygon, Color3.Red());}
+        }));
+
+        // On mouse out
+        this.extruded_polygon.actionManager.registerAction(new ExecuteCodeAction(ActionManager.OnPointerOutTrigger, () => {
+            if (enable_move) {
+            hl.removeMesh(this.extruded_polygon);}
+        }));
     }
 
     enable_move() {
@@ -96,11 +115,11 @@ export class Polygon {
     }
     
     disable_edit() {
-        this.vertices.forEach((sphere) => {
-        this.vertex_dragBehaviors.forEach((behavior) => {
-            behavior.detach()
-        })
-    })
+        this.vertices.forEach((sphere, index) => {
+        if (this.vertex_dragBehaviors[index]) {
+            this.vertex_dragBehaviors[index].detach();
+        }
+    });
     }
 
     enable_edit() {
@@ -111,7 +130,6 @@ export class Polygon {
             });
 
             dragBehaviorPt.onDragObservable.add((event) => {
-                // if ( enable_edit ) {
                 console.log("here")
                 this.points[index].x = vertex.position.x;
                 this.points[index].y = vertex.position.y;
@@ -119,10 +137,8 @@ export class Polygon {
                 console.log(this.extruded_polygon)
                 this.extruded_polygon.dispose();
                 this.extrude(2)
-            // }
             });
-
-            vertex.addBehavior(dragBehaviorPt);
+            this.vertices[index].addBehavior(dragBehaviorPt);
             this.vertex_dragBehaviors.push(dragBehaviorPt)
         })
     }
@@ -133,9 +149,29 @@ export class Polygon {
         })
         this.vertices = []
         this.points.forEach((vertex, index) => {
-            var handle = CreateSphere("handle "+index, { diameter: 0.1 }, this.scene);
+            var handle = CreateSphere("handle "+index, { diameter: 0.15 }, this.scene);
             handle.position = vertex.clone();
             this.vertices.push(handle);
+
+            var hl = new HighlightLayer("hl1", this.scene, {
+                isStroke: false,
+            });
+
+             // Add ActionManager for highlighting
+        handle.actionManager = new ActionManager(this.scene);
+
+        // On mouse over
+        handle.actionManager.registerAction(new ExecuteCodeAction(ActionManager.OnPointerOverTrigger, () => {
+            if(enable_edit) {
+            this.scene.hoverCursor = "pointer";
+            hl.addMesh(handle, Color3.Red());}
+        }));
+
+        // On mouse out
+        handle.actionManager.registerAction(new ExecuteCodeAction(ActionManager.OnPointerOutTrigger, () => {
+            if (enable_edit) {
+            hl.removeMesh(handle);}
+        }));
         });
 
     }
