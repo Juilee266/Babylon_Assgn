@@ -32,9 +32,8 @@ export class Polygon {
     }
 
     extrude(height) {
-        console.log("Number = ", this.points)
         var polygonMaterial = new StandardMaterial("polygonMaterial", this.scene);
-        polygonMaterial.diffuseColor = new Color3(1, 0, 0); // Red color
+        polygonMaterial.diffuseColor = new Color3(1, 0, 0);
 
         this.extruded_polygon = ExtrudePolygon("poly", { shape: this.points, depth: height, sideOrientation: Mesh.DOUBLESIDE }, this.scene, earcut)
         this.extruded_polygon.material = polygonMaterial
@@ -82,9 +81,16 @@ export class Polygon {
             this.adjust_vertices()
 
         })
+        // if(this.poly_drag_behavior != null) {
+        //     this.poly_drag_behavior.detach()
+        // }
+        
         this.extruded_polygon.addBehavior(dragBehavior);
         this.poly_drag_behavior = dragBehavior
-        this.poly_drag_behavior.detach()
+
+        if(enable_move == false) {
+            this.poly_drag_behavior.detach()
+        }
 
         var hl = new HighlightLayer("hl1", this.scene, {
             isStroke: false,
@@ -111,6 +117,8 @@ export class Polygon {
     }
 
     disable_move() {
+        console.log("called")
+        console.log("detaching")
         this.poly_drag_behavior.detach()
     }
     
@@ -173,6 +181,10 @@ export class Polygon {
             hl.removeMesh(handle);}
         }));
         });
+        if (enable_edit) {
+            this.enable_edit()
+        }
+        
 
     }
 }

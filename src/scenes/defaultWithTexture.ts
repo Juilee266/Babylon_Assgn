@@ -68,7 +68,7 @@ export class DefaultSceneWithTexture implements CreateSceneClass {
             }
             curr_poly.adjust_vertices()
             curr_poly.extrude(2)
-            polygons.push(curr_poly)
+            // polygons.push(curr_poly)
             spheres.forEach((sphere) => {
                 sphere.dispose()
             })
@@ -76,8 +76,9 @@ export class DefaultSceneWithTexture implements CreateSceneClass {
         }
 
         var move_button_handler = () => {
-
+            console.log("move_button_handler", polygons.length)
             if (enable_move == true) {
+                
                 polygons.forEach((poly) => {
                     if (poly != null) {
                         enable_move = false
