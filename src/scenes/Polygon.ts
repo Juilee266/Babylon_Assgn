@@ -11,7 +11,7 @@ import { CreateSphere } from "@babylonjs/core/Meshes/Builders/sphereBuilder";
 import { CreateLines } from "@babylonjs/core/Meshes/Builders/linesBuilder";
 import { Scene } from "@babylonjs/core/scene";
 import { HighlightLayer } from "@babylonjs/core/Layers/highlightLayer";
-import { enable_edit, enable_move } from "./defaultWithTexture";
+import { enable_edit, enable_move } from "./scene_setup";
 
 
 export class Polygon {

@@ -4,7 +4,7 @@ import { Color3, Vector3 } from "@babylonjs/core/Maths/math";
 import { CreateGround } from "@babylonjs/core/Meshes/Builders/groundBuilder";
 import { Button, Control, TextBlock } from "@babylonjs/gui";
 import { GROUND_HEIGHT, GROUND_WIDTH } from "./constants";
-import { enable_edit, enable_move } from "./defaultWithTexture";
+import { enable_edit, enable_move } from "./scene_setup";
 
 export function create_button(name, text, alignment, handler) {
     console.log("Creating button " + name)
