@@ -9,7 +9,8 @@ import { AbstractEngine } from "@babylonjs/core/Engines/abstractEngine";
 import { AdvancedDynamicTexture, Control, TextBlock } from "@babylonjs/gui";
 import { create_ground, create_light, create_button, create_gui, setText } from "./common_utils";
 import { CreateLines } from "@babylonjs/core/Meshes/Builders/linesBuilder";
-import { Polygon } from "./Polygon";
+import { ExtrudedObject } from "./ExtrudedObject";
+import { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight";
 
 
 var points = []                 // Maintains Vector3 points selected 
@@ -55,6 +56,7 @@ export class DefaultSceneWithTexture implements CreateSceneClass {
         const light3 = create_light(scene, new Vector3(0,1,0))
         const light4 = create_light(scene, new Vector3(1,-1,0))
         const light5 = create_light(scene, new Vector3(1,0,0))
+        const light = new HemisphericLight("hemi", new Vector3(50, 50, 0));
 
         // For GUI
         var advancedTexture = AdvancedDynamicTexture.CreateFullscreenUI("UI");
@@ -80,7 +82,6 @@ export class DefaultSceneWithTexture implements CreateSceneClass {
                 sphere.dispose()
             })
 
-            curr_poly.adjust_vertices()
             curr_poly.extrude(2)
 
             
@@ -172,7 +173,7 @@ export class DefaultSceneWithTexture implements CreateSceneClass {
                             }
                             advancedTexture.getControlByName("extrude").isEnabled = true
                             lines = CreateLines("lines", { points: points.concat([start_pt]) }, scene)
-                            let poly = new Polygon(scene, points)
+                            let poly = new ExtrudedObject("poly_"+polygons.length, scene, points)
                             polygons.push(poly)
                             curr_poly = poly
                             enable_draw = false

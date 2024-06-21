@@ -23,11 +23,12 @@ export function create_button(name, text, alignment, handler) {
 export function create_ground(scene) {
     const ground = CreateGround(
         "ground",
-        { width: GROUND_WIDTH, height: GROUND_HEIGHT },
+        { width: GROUND_WIDTH, height: GROUND_HEIGHT, subdivisions: 2},
         scene
     );
     const groundMaterial = new StandardMaterial("ground material", scene);
     groundMaterial.diffuseColor = new Color3(0.9, 0.9, 0.9);
+    groundMaterial.alpha = 0.5;
     ground.material = groundMaterial;
     ground.receiveShadows = true;
 
